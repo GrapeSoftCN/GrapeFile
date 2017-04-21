@@ -24,11 +24,6 @@ public class FileModel {
 		return file.eq("_id", new ObjectId(fid)).find();
 	}
 
-	public int Rename(String fid, String fileInfo) {
-		JSONObject object = JSONHelper.string2json(fileInfo);
-		return file.eq("_id", new ObjectId(fid)).data(object).update() != null ? 0 : 99;
-	}
-
 	public int update(String fid, String fileInfo) {
 		JSONObject object = JSONHelper.string2json(fileInfo);
 		return file.eq("_id", new ObjectId(fid)).data(object).update() != null ? 0 : 99;
@@ -49,36 +44,20 @@ public class FileModel {
 	public int updates(String fids, String folderid) {
 		JSONObject object = new JSONObject();
 		object.put("fatherid", folderid);
-		return file.eq("_id", new ObjectId(fids)).data(object).update()!=null?0:99;
+		return file.eq("_id", new ObjectId(fids)).data(object).update() != null ? 0 : 99;
 	}
 
-	// public int update(String jsonarray){
-	// JSONObject object;
-	// String folderid = "";
-	// file = (DBHelper) file.or();
-	// JSONArray array = (JSONArray) JSONValue.parse(jsonarray);
-	// for (int i = 0; i < array.size(); i++) {
-	// object = (JSONObject) array.get(i);
-	// if (object.containsKey("_id")) {
-	// file.eq("_id", new ObjectId(object.get("_id").toString()));
-	// }
-	// }
-	// return file.eq("_id", new ObjectId(fid)).data(object).update()!=null?0:99;
-	// }
-	// public JSONArray show() {
-	// return file.select();
-	// }
 	public JSONArray find(JSONObject fileInfo) {
 		@SuppressWarnings("unchecked")
 		Set<Object> set = fileInfo.keySet();
 		for (Object object2 : set) {
 			file.eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
-		return file.select();
+		return file.limit(20).select();
 	}
 
 	public JSONArray show(String typeid) {
-		return file.eq("type", typeid).select();
+		return file.eq("type", typeid).limit(20).select();
 	}
 
 	public int delete(String fileId) {
@@ -93,10 +72,6 @@ public class FileModel {
 		return file.delete() != null ? 0 : 99;
 	}
 
-	// public int deleteUpdate(String fileId) {
-	// String jsonString = "{\"isdelete\":\"1\"}";
-	// return file.update(new ObjectId(fileId), jsonString)==true?0:99;
-	// }
 	public String page(int idx, int pageSize) {
 		JSONArray array = file.page(idx, pageSize);
 		@SuppressWarnings("unchecked")
@@ -118,8 +93,7 @@ public class FileModel {
 		@SuppressWarnings("unchecked")
 		Set<Object> set = JSONHelper.string2json(fileInfo).keySet();
 		for (Object object2 : set) {
-			file.eq(object2.toString(), JSONHelper.string2json(fileInfo).get(object2
-					.toString()));
+			file.eq(object2.toString(), JSONHelper.string2json(fileInfo).get(object2.toString()));
 		}
 		JSONArray array = file.page(idx, pageSize);
 		@SuppressWarnings("unchecked")

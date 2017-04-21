@@ -22,9 +22,9 @@ public class Files {
 		_obj.put("records", StringEscapeUtils.unescapeJava(fileModel.addfile(object)));
 		return fileModel.resultmsg(0,_obj.toString());
 	}
-	public String Rename(String fid,String fileInfo) {
-		return fileModel.resultmsg(fileModel.Rename(fid,fileInfo), "文件重命名成功！");
-	}
+//	public String Rename(String fid,String fileInfo) {
+//		return fileModel.resultmsg(fileModel.Rename(fid,fileInfo), "文件重命名成功！");
+//	}
 	public String FindFile(String fileInfo) {
 		_obj.put("records", fileModel.find(JSONHelper.string2json(fileInfo)));
 		return fileModel.resultmsg(0, _obj.toString());
