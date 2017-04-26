@@ -15,10 +15,10 @@ public class FileConvertModel {
 	 * @return
 	 */
 	public OpenOfficeConnection execOpenOffice() {
-		String command = "E:\\OpenOffice\\OpenOffice4\\program\\soffice.exe -headless -accept=\"socket,host=127.0.0.1,port=8100;urp;\"";
+		String command = "E:\\OpenOffice\\OpenOffice4\\program\\soffice.exe -headless -accept=\"socket,host=192.168.3.141,port=8100;urp;\"";
 		try {
 			process = Runtime.getRuntime().exec(command);
-			connection = new SocketOpenOfficeConnection("127.0.0.1", 8100);
+			connection = new SocketOpenOfficeConnection("192.168.3.141", 8100);
 			connection.connect();
 		} catch (IOException e) {
 			e.printStackTrace();
