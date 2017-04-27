@@ -74,6 +74,9 @@ public class FileModel {
 
 	// json条件查询文件或文件夹信息
 	public JSONArray find(JSONObject fileInfo) {
+		if (fileInfo.containsKey("isdelete")) {
+			file.eq("isdelete", 0);
+		}
 		for (Object object2 : fileInfo.keySet()) {
 			file.eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
@@ -82,6 +85,9 @@ public class FileModel {
 
 	@SuppressWarnings("unchecked")
 	public JSONObject page(int ids, int pageSize, JSONObject fileInfo) {
+		if (fileInfo.containsKey("isdelete")) {
+			file.eq("isdelete", 0);
+		}
 		for (Object object2 : fileInfo.keySet()) {
 			file.eq(object2.toString(), fileInfo.get(object2.toString()));
 		}

@@ -15,7 +15,7 @@ public class Files {
 	public String AddFolder(String fileInfo) {
 		JSONObject object = JSONHelper.string2json(fileInfo);
 		object.put("filetype", 0); // 文件夹的文件类型设置为0
-		object.put("isdelete", 0); 
+		object.put("isdelete", 0);
 		if (!object.containsKey("fatherid")) {
 			object.put("fatherid", 0);
 		} else {
@@ -26,55 +26,60 @@ public class Files {
 	}
 
 	// 重命名文件或文件夹,返回重命名后的数据信息
-	public String Rename(String fid, String fileInfo) {
+	public String FileUpdate(String fid, String fileInfo) {
 		_obj.put("records", JSONHelper.string2json(fileModel.update(fid, JSONHelper.string2json(fileInfo))));
 		return fileModel.resultmsg(0, _obj.toString());
 	}
 
-	// 文件存入回收站,fileInfo={\"isdelete\":\"1\"}
+	// 文件存入回收站,fileInfo={\"isdelete\":\"1\"}[支持多个文件操作]
+	public String RecyCle(String fid) {
+		String fileInfo = "{\"isdelete\":1}";
+		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "存入回收站成功");
+	}
+
 	// 文件还原,fileInfo={\"isdelete\":\"0\"}
-	public String RecyCle(String fid, String fileInfo) {
-		// String isdelete = "{\"isdelete\":\"1\"}";
-		return fileModel.resultmsg(fileModel.updates(fid, JSONHelper.string2json(fileInfo)), "回收站相关操作成功");
+	public String Restore(String fid) {
+		String fileInfo = "{\"isdelete\":0}";
+		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "从回收站还原文件成功");
 	}
-
-	// 文件和文件夹移动到回收站（文件夹包含文件）
-	public String RecyBatch(String folderid, String FileInfo) {
-		return fileModel.resultmsg(fileModel.RecyBatch(folderid, JSONHelper.string2json(FileInfo)), "文件夹存入回收站操作成功");
-	}
-
 
 	// 删除文件
 	public String Delete(String fid) {
 		return fileModel.resultmsg(fileModel.ckDelete(fid), "文件删除成功");
 	}
 
+	// 批量删除
+	public String BatchDelete(String fid) {
+		return fileModel.resultmsg(fileModel.ckDelete(fid), "文件删除成功");
+	}
+
 	// 文件移动至文件夹[包含批量移动]
-	public String MoveToFolder(String fids, String folderid) {
+	public String FileUpdateBatch(String fids, String folderid) {
 		String FileInfo = "{\"fatherid\":\"" + folderid + "\"" + "}";
 		return fileModel.resultmsg(fileModel.updates(fids, JSONHelper.string2json(FileInfo)), "文件移动到文件夹成功");
 	}
 
-	// 分页显示文件，文件夹[包含显示回收站文件信息] 取消该接口
 	/**
 	 * 条件分页显示
 	 * 
 	 * @param idx
 	 * @param pageSize
 	 * @param fileInfo
-	 *            {isdelete:0}显示所有文件 
-	 *            {filetype:1}显示图片文件 
-	 *            {filetype:2}显示视频文件
-	 *            {filetype:3}显示文档文件 
-	 *            {filetype:4}显示音频文件 
-	 *            {filetype:5}显示其他类型文件
+	 *            {isdelete:0}显示所有文件 {filetype:1}显示图片文件 {filetype:2}显示视频文件
+	 *            {filetype:3}显示文档文件 {filetype:4}显示音频文件 {filetype:5}显示其他类型文件
 	 *            {isdelete:1}显示回收站文件
 	 * @return
 	 */
-	public String Page(int idx, int pageSize, String fileInfo) {
+	public String PageBy(int idx, int pageSize, String fileInfo) {
 		_obj.put("records", fileModel.page(idx, pageSize, JSONHelper.string2json(fileInfo)));
 		return fileModel.resultmsg(0, _obj.toString());
 	}
+
+	public String FindFile(String fileInfo) {
+		_obj.put("records", fileModel.find(JSONHelper.string2json(fileInfo)));
+		return fileModel.resultmsg(0, _obj.toString());
+	}
+
 	public String getWord(String fid) {
 		JSONObject object = fileModel.find(fid);
 		String words = new fileconvert().office2htmlString(object.get("filepath").toString(), "e://test");
