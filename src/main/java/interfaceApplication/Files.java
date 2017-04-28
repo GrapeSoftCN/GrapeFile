@@ -1,6 +1,9 @@
 package interfaceApplication;
 
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import esayhelper.JSONHelper;
 import model.FileModel;
@@ -43,16 +46,6 @@ public class Files {
 		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "从回收站还原文件成功");
 	}
 
-	// 删除文件
-	public String Delete(String fid) {
-		return fileModel.resultmsg(fileModel.ckDelete(fid), "文件删除成功");
-	}
-
-	// 批量删除
-	public String BatchDelete(String fid) {
-		return fileModel.resultmsg(fileModel.ckDelete(fid), "文件删除成功");
-	}
-
 	// 文件移动至文件夹[包含批量移动]
 	public String FileUpdateBatch(String fids, String folderid) {
 		String FileInfo = "{\"fatherid\":\"" + folderid + "\"" + "}";
@@ -78,6 +71,34 @@ public class Files {
 	public String FindFile(String fileInfo) {
 		_obj.put("records", fileModel.find(JSONHelper.string2json(fileInfo)));
 		return fileModel.resultmsg(0, _obj.toString());
+	}
+
+	/**
+	 * 删除单条文件数据
+	 * 
+	 * @param FileInfo
+	 *            非回收站文件{"_id":文件id;"size":文件大小}
+	 *            回收站文件{"_id":文件id;"size":文件大小,"isdelete":1}
+	 * @return
+	 */
+	public String Delete(String FileInfo) {
+		JSONObject object = JSONHelper.string2json(FileInfo);
+		return fileModel.resultmsg(fileModel.delete(object), "操作成功");
+	}
+
+	/**
+	 * 批量删除数据
+	 * 
+	 * @param FileInfo
+	 *            非回收站文件[{"_id":文件id;"size":文件大小},{"_id":文件id;"size":文件大小},{
+	 *            "_id":文件id;"size":文件大小}]
+	 *            回收站文件[{"_id":文件id;"size":文件大小,"isdelete":1},{"_id":文件id;"size"
+	 *            :文件大小,"isdelete":1},{"_id":文件id;"size":文件大小,"isdelete":1}]
+	 * @return
+	 */
+	public String BatchDelete(String FileInfo) {
+		JSONArray array = (JSONArray) JSONValue.parse(FileInfo);
+		return fileModel.resultmsg(fileModel.batch(array), "操作成功");
 	}
 
 	public String getWord(String fid) {

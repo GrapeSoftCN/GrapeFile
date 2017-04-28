@@ -1,6 +1,7 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
@@ -54,7 +55,7 @@ public class FileModel {
 		} else {
 			file.eq("_id", new ObjectId(fids));
 		}
-		return file.data(FileInfo).update() != null ? 0 : 99;
+		return file.data(FileInfo).updateAll() != 0 ? 0 : 99;
 	}
 
 	// id查询文件或文件夹信息
@@ -78,14 +79,14 @@ public class FileModel {
 			file.eq("isdelete", 0);
 		}
 		for (Object object2 : fileInfo.keySet()) {
-			file.eq(object2.toString(), fileInfo.get(object2.toString()));
+			file.like(object2.toString(), fileInfo.get(object2.toString()));
 		}
 		return file.limit(20).select();
 	}
 
 	@SuppressWarnings("unchecked")
 	public JSONObject page(int ids, int pageSize, JSONObject fileInfo) {
-		if (fileInfo.containsKey("isdelete")) {
+		if (!fileInfo.containsKey("isdelete")) {
 			file.eq("isdelete", 0);
 		}
 		for (Object object2 : fileInfo.keySet()) {
@@ -155,10 +156,10 @@ public class FileModel {
 		return StringHelper.join(list);
 	}
 	
-	//删除文件[包含批量删除   ]
-	public int delete(String fid) {
+	//删除文件[包含批量删除]
+	private int delete(String fid) {
 		if (fid.contains(",")) {
-			file = (DBHelper) file.or();
+			file.or();
 			String[] value = fid.split(",");
 			for (int i = 0, len = value.length; i < len; i++) {
 				file.eq("_id", new ObjectId(value[i]));
@@ -166,7 +167,7 @@ public class FileModel {
 		} else {
 			file.eq("_id", new ObjectId(fid));
 		}
-		return file.delete()!=null?0:99;
+		return file.deleteAll()!=0?0:99;
 	}
 
 	public int ckDelete(String fid) {
@@ -188,6 +189,50 @@ public class FileModel {
 			}
 		}
 		return delete(fid);
+	}
+	
+	public int delete(JSONObject object) {
+		int code=0;
+		long size = (long) object.get("size");
+		if (object.containsKey("isdelete")) {
+			code = ckDelete(object.get("_id").toString());
+		}
+		if (size > 4*1024*1024*1024) {
+			code = ckDelete(object.get("_id").toString());
+		}else{
+			String infos = "{\"isdelete\":1}";
+			code = RecyBatch(object.get("_id").toString(), JSONHelper.string2json(infos));
+		}
+		return code;
+	}
+	public int batch(JSONArray array) {
+		int code=0;
+		boolean flag=false;
+		List<String> list = new ArrayList<>();
+		List<String> lists = new ArrayList<>();
+		long FIXSIZE = new Long((long)4*1024*1024*1024);
+		for (int i = 0,len = array.size(); i < len; i++) {
+			JSONObject object = (JSONObject) array.get(i);
+			if (object.containsKey("isdelete")) {
+				flag = true;
+				list.add(object.get("_id").toString());
+			}else{
+				if ((long)object.get("size") > FIXSIZE) {
+					flag = true;
+					list.add(object.get("_id").toString());
+				}else{
+					lists.add(object.get("_id").toString());
+				}
+			}
+		}
+		if (flag) {
+			code = ckDelete(StringHelper.join(list));
+		}
+		if (lists.size()!=0) {
+			String infos = "{\"isdelete\":1}";
+			code = RecyBatch(StringHelper.join(lists), JSONHelper.string2json(infos));
+		}
+		return code;
 	}
 	private void deleteall(String fid){
 		if (fid.contains(",")) {
