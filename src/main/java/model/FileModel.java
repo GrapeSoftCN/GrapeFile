@@ -17,6 +17,8 @@ import esayhelper.jGrapeFW_Message;
 public class FileModel {
 	private static DBHelper file;
 	private static formHelper form;
+	private JSONObject _obj = new JSONObject();
+
 	static {
 		file = new DBHelper("mongodb", "file");
 		form = file.getChecker();
@@ -37,14 +39,15 @@ public class FileModel {
 
 	// 修改文件信息
 	public String update(String fid, JSONObject FileInfo) {
-		int code = file.eq("_id", new ObjectId(fid)).data(FileInfo).update() != null ? 0 : 99;
+		int code = file.eq("_id", new ObjectId(fid)).data(FileInfo)
+				.update() != null ? 0 : 99;
 		if (code != 0) {
 			return resultmsg(code, "操作失败");
 		}
 		return find(fid).toString();
 	}
 
-	//整合单个文件修改及批量修改
+	// 整合单个文件修改及批量修改
 	public int updates(String fids, JSONObject FileInfo) {
 		if (fids.contains(",")) {
 			file = (DBHelper) file.or();
@@ -94,7 +97,8 @@ public class FileModel {
 		}
 		JSONArray array = file.page(ids, pageSize);
 		JSONObject object = new JSONObject();
-		object.put("totalSize", (int) Math.ceil((double) file.count() / pageSize));
+		object.put("totalSize",
+				(int) Math.ceil((double) file.count() / pageSize));
 		object.put("currentPage", ids);
 		object.put("pageSize", pageSize);
 		object.put("data", array);
@@ -155,8 +159,8 @@ public class FileModel {
 		list.add(fid);
 		return StringHelper.join(list);
 	}
-	
-	//删除文件[包含批量删除]
+
+	// 删除文件[包含批量删除]
 	private int delete(String fid) {
 		if (fid.contains(",")) {
 			file.or();
@@ -167,7 +171,7 @@ public class FileModel {
 		} else {
 			file.eq("_id", new ObjectId(fid));
 		}
-		return file.deleteAll()!=0?0:99;
+		return file.deleteAll() != 0 ? 0 : 99;
 	}
 
 	public int ckDelete(String fid) {
@@ -184,43 +188,45 @@ public class FileModel {
 					list.add(value[i]);
 				}
 			}
-			if (list.size()!=0) {
+			if (list.size() != 0) {
 				deleteall(StringHelper.join(list));
 			}
 		}
 		return delete(fid);
 	}
-	
+
 	public int delete(JSONObject object) {
-		int code=0;
+		int code = 0;
 		long size = (long) object.get("size");
 		if (object.containsKey("isdelete")) {
 			code = ckDelete(object.get("_id").toString());
 		}
-		if (size > 4*1024*1024*1024) {
+		if (size > 4 * 1024 * 1024 * 1024) {
 			code = ckDelete(object.get("_id").toString());
-		}else{
+		} else {
 			String infos = "{\"isdelete\":1}";
-			code = RecyBatch(object.get("_id").toString(), JSONHelper.string2json(infos));
+			code = RecyBatch(object.get("_id").toString(),
+					JSONHelper.string2json(infos));
 		}
 		return code;
 	}
+
 	public int batch(JSONArray array) {
-		int code=0;
-		boolean flag=false;
+		int code = 0;
+		boolean flag = false;
 		List<String> list = new ArrayList<>();
 		List<String> lists = new ArrayList<>();
-		long FIXSIZE = new Long((long)4*1024*1024*1024);
-		for (int i = 0,len = array.size(); i < len; i++) {
+		long FIXSIZE = new Long((long) 4 * 1024 * 1024 * 1024);
+		for (int i = 0, len = array.size(); i < len; i++) {
 			JSONObject object = (JSONObject) array.get(i);
 			if (object.containsKey("isdelete")) {
 				flag = true;
 				list.add(object.get("_id").toString());
-			}else{
-				if ((long)object.get("size") > FIXSIZE) {
+			} else {
+				if ((long) object.get("size") > FIXSIZE) {
 					flag = true;
 					list.add(object.get("_id").toString());
-				}else{
+				} else {
 					lists.add(object.get("_id").toString());
 				}
 			}
@@ -228,24 +234,39 @@ public class FileModel {
 		if (flag) {
 			code = ckDelete(StringHelper.join(list));
 		}
-		if (lists.size()!=0) {
+		if (lists.size() != 0) {
 			String infos = "{\"isdelete\":1}";
-			code = RecyBatch(StringHelper.join(lists), JSONHelper.string2json(infos));
+			code = RecyBatch(StringHelper.join(lists),
+					JSONHelper.string2json(infos));
 		}
 		return code;
 	}
-	private void deleteall(String fid){
+
+	private void deleteall(String fid) {
 		if (fid.contains(",")) {
 			file.or();
 			String[] value = fid.split(",");
-			for (int i = 0,len = value.length; i < len; i++) {
+			for (int i = 0, len = value.length; i < len; i++) {
 				file.eq("fatherid", value[i]);
 			}
-		}else{
+		} else {
 			file.eq("fatherid", fid);
 		}
 		file.deleteAll();
 	}
+
+	@SuppressWarnings("unchecked")
+	public String resultMessage(JSONObject object) {
+		_obj.put("records", object);
+		return resultmsg(0, _obj.toString());
+	}
+
+	@SuppressWarnings("unchecked")
+	public String resultMessage(JSONArray array) {
+		_obj.put("records", array);
+		return resultmsg(0, _obj.toString());
+	}
+
 	public String resultmsg(int num, String mString) {
 		String msg = "";
 		switch (num) {
@@ -254,6 +275,15 @@ public class FileModel {
 			break;
 		case 1:
 			msg = "必填项为空";
+			break;
+		case 2:
+			msg = "没有创建数据权限，请联系管理员进行权限调整";
+			break;
+		case 3:
+			msg = "没有修改数据权限，请联系管理员进行权限调整";
+			break;
+		case 4:
+			msg = "没有删除数据权限，请联系管理员进行权限调整";
 			break;
 		default:
 			msg = "其他异常";
