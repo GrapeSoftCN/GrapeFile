@@ -7,6 +7,7 @@ import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import apps.appsProxy;
 import esayhelper.DBHelper;
 import esayhelper.JSONHelper;
 import esayhelper.StringHelper;
@@ -20,7 +21,9 @@ public class FileModel {
 	private JSONObject _obj = new JSONObject();
 
 	static {
-		file = new DBHelper("mongodb", "file");
+//		JSONObject object = appsProxy.configValue();
+//		file = new DBHelper(object.get("db").toString(), "file","_id");
+		file = new DBHelper("mongodb", "file","_id");
 		form = file.getChecker();
 	}
 
