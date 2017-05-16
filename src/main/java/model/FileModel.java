@@ -21,9 +21,9 @@ public class FileModel {
 	private JSONObject _obj = new JSONObject();
 
 	static {
-//		JSONObject object = appsProxy.configValue();
-//		file = new DBHelper(object.get("db").toString(), "file","_id");
-		file = new DBHelper("mongodb", "file","_id");
+		file = new DBHelper(appsProxy.configValue().get("db").toString(),
+				"file", "_id");
+//		file = new DBHelper("mongodb", "file", "_id");
 		form = file.getChecker();
 	}
 
@@ -226,11 +226,15 @@ public class FileModel {
 				flag = true;
 				list.add(object.get("_id").toString());
 			} else {
-				if ((long) object.get("size") > FIXSIZE) {
-					flag = true;
-					list.add(object.get("_id").toString());
-				} else {
+				if (object.get("size").toString()==null) {
 					lists.add(object.get("_id").toString());
+				}else{
+					if ((long) object.get("size") > FIXSIZE) {
+						flag = true;
+						list.add(object.get("_id").toString());
+					} else {
+						lists.add(object.get("_id").toString());
+					}
 				}
 			}
 		}

@@ -166,7 +166,7 @@ public class Files {
 	public String geturl(String fid) {
 		JSONObject object = fileModel.find(fid);
 		String url = object.get("filepath").toString();
-		url = "http://123.57.214.226:8080" + url.split("webapps")[1];
-		return url + "\\" + object.get("fileoldname").toString();
+		url = "http://123.57.214.226:8080" + url;
+		return url;
 	}
 }
