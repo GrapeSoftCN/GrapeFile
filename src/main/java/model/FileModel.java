@@ -8,6 +8,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import apps.appsProxy;
+import database.db;
 import esayhelper.DBHelper;
 import esayhelper.JSONHelper;
 import esayhelper.StringHelper;
@@ -23,8 +24,11 @@ public class FileModel {
 	static {
 		file = new DBHelper(appsProxy.configValue().get("db").toString(),
 				"file", "_id");
-//		file = new DBHelper("mongodb", "file", "_id");
 		form = file.getChecker();
+	}
+
+	private db bind() {
+		return file.bind(String.valueOf(appsProxy.appid()));
 	}
 
 	public FileModel() {
@@ -36,13 +40,13 @@ public class FileModel {
 		if (!form.checkRuleEx(files)) {
 			return resultmsg(1, "必填项为空");
 		}
-		String info = file.data(files).insertOnce().toString();
+		String info = bind().data(files).insertOnce().toString();
 		return find(info).toString();
 	}
 
 	// 修改文件信息
 	public String update(String fid, JSONObject FileInfo) {
-		int code = file.eq("_id", new ObjectId(fid)).data(FileInfo)
+		int code = bind().eq("_id", new ObjectId(fid)).data(FileInfo)
 				.update() != null ? 0 : 99;
 		if (code != 0) {
 			return resultmsg(code, "操作失败");
@@ -53,20 +57,20 @@ public class FileModel {
 	// 整合单个文件修改及批量修改
 	public int updates(String fids, JSONObject FileInfo) {
 		if (fids.contains(",")) {
-			file = (DBHelper) file.or();
+			bind().or();
 			String[] value = fids.split(",");
 			for (int i = 0, len = value.length; i < len; i++) {
-				file.eq("_id", new ObjectId(value[i]));
+				bind().eq("_id", new ObjectId(value[i]));
 			}
 		} else {
-			file.eq("_id", new ObjectId(fids));
+			bind().eq("_id", new ObjectId(fids));
 		}
-		return file.data(FileInfo).updateAll() != 0 ? 0 : 99;
+		return bind().data(FileInfo).updateAll() != 0 ? 0 : 99;
 	}
 
 	// id查询文件或文件夹信息
 	public JSONObject find(String fid) {
-		return file.eq("_id", new ObjectId(fid)).find();
+		return bind().eq("_id", new ObjectId(fid)).find();
 	}
 
 	// 获取某个文件夹下所有文件的大小
@@ -82,26 +86,26 @@ public class FileModel {
 	// json条件查询文件或文件夹信息
 	public JSONArray find(JSONObject fileInfo) {
 		if (fileInfo.containsKey("isdelete")) {
-			file.eq("isdelete", 0);
+			bind().eq("isdelete", 0);
 		}
 		for (Object object2 : fileInfo.keySet()) {
-			file.like(object2.toString(), fileInfo.get(object2.toString()));
+			bind().like(object2.toString(), fileInfo.get(object2.toString()));
 		}
-		return file.limit(20).select();
+		return bind().limit(20).select();
 	}
 
 	@SuppressWarnings("unchecked")
 	public JSONObject page(int ids, int pageSize, JSONObject fileInfo) {
 		if (!fileInfo.containsKey("isdelete")) {
-			file.eq("isdelete", 0);
+			bind().eq("isdelete", 0);
 		}
 		for (Object object2 : fileInfo.keySet()) {
-			file.eq(object2.toString(), fileInfo.get(object2.toString()));
+			bind().eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
-		JSONArray array = file.page(ids, pageSize);
+		JSONArray array = bind().dirty().page(ids, pageSize);
 		JSONObject object = new JSONObject();
 		object.put("totalSize",
-				(int) Math.ceil((double) file.count() / pageSize));
+				(int) Math.ceil((double) bind().count() / pageSize));
 		object.put("currentPage", ids);
 		object.put("pageSize", pageSize);
 		object.put("data", array);
@@ -166,15 +170,15 @@ public class FileModel {
 	// 删除文件[包含批量删除]
 	private int delete(String fid) {
 		if (fid.contains(",")) {
-			file.or();
+			bind().or();
 			String[] value = fid.split(",");
 			for (int i = 0, len = value.length; i < len; i++) {
-				file.eq("_id", new ObjectId(value[i]));
+				bind().eq("_id", new ObjectId(value[i]));
 			}
 		} else {
-			file.eq("_id", new ObjectId(fid));
+			bind().eq("_id", new ObjectId(fid));
 		}
-		return file.deleteAll() != 0 ? 0 : 99;
+		return bind().deleteAll() != 0 ? 0 : 99;
 	}
 
 	public int ckDelete(String fid) {
@@ -226,9 +230,9 @@ public class FileModel {
 				flag = true;
 				list.add(object.get("_id").toString());
 			} else {
-				if (object.get("size").toString()==null) {
+				if (object.get("size").toString() == null) {
 					lists.add(object.get("_id").toString());
-				}else{
+				} else {
 					if ((long) object.get("size") > FIXSIZE) {
 						flag = true;
 						list.add(object.get("_id").toString());
@@ -251,15 +255,15 @@ public class FileModel {
 
 	private void deleteall(String fid) {
 		if (fid.contains(",")) {
-			file.or();
+			bind().or();
 			String[] value = fid.split(",");
 			for (int i = 0, len = value.length; i < len; i++) {
-				file.eq("fatherid", value[i]);
+				bind().eq("fatherid", value[i]);
 			}
 		} else {
-			file.eq("fatherid", fid);
+			bind().eq("fatherid", fid);
 		}
-		file.deleteAll();
+		bind().deleteAll();
 	}
 
 	@SuppressWarnings("unchecked")
