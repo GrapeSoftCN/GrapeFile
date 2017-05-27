@@ -1,5 +1,8 @@
 package interfaceApplication;
 
+import java.io.FileInputStream;
+import java.util.Properties;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -168,7 +171,7 @@ public class Files {
 	// 获取文件对象
 	public String getFile(String fid) {
 		JSONObject object = fileModel.find(fid);
-		return fileModel.resultmsg(0, object!=null?object.toString():"");
+		return fileModel.resultmsg(0, object != null ? object.toString() : "");
 	}
 
 	// 获取文件路径
@@ -180,8 +183,20 @@ public class Files {
 		}
 		if (object.containsKey("filepath")) {
 			url = object.get("filepath").toString();
-			url = "http://123.57.214.226:8080" + url;
+//			url = "http://123.57.214.226:8080" + url;
+			url =  getAppIp("file")+ url;
 		}
 		return url;
+	}
+	private String getAppIp(String key) {
+		String value = "";
+		try {
+			Properties pro = new Properties();
+			pro.load(new FileInputStream("URLConfig.properties"));
+			value = pro.getProperty(key);
+		} catch (Exception e) {
+			value = "";
+		}
+		return value;
 	}
 }
