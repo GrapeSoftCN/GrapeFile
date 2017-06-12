@@ -184,10 +184,12 @@ public class Files {
 		if (object.containsKey("filepath")) {
 			url = object.get("filepath").toString();
 //			url = "http://123.57.214.226:8080" + url;
-			url =  getAppIp("file")+ url;
+			url =  getAppIp("file").split("/")[0]+ url;
 		}
 		return url;
 	}
+	//视频格式转码
+	
 	private String getAppIp(String key) {
 		String value = "";
 		try {
@@ -199,4 +201,5 @@ public class Files {
 		}
 		return value;
 	}
+	
 }
