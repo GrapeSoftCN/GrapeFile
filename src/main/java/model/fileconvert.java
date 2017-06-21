@@ -34,9 +34,6 @@ public class fileconvert {
 		if (!inputFile.exists()) {
 			return;
 		}
-		if (!outputFile.exists()) {
-			outputFile.mkdir();
-		}
 		outputFile = new File(destFile + "\\" + (int) System.currentTimeMillis() / 1000
 				+ ".pdf");
 		OpenOfficeConnection connection = model.execOpenOffice();
@@ -58,9 +55,6 @@ public class fileconvert {
 		File outputFile = new File(destFile);
 		if (!inputFile.exists()) {
 			return "";
-		}
-		if (!outputFile.exists()) {
-			outputFile.mkdir();
 		}
 		outputFile = new File(destFile + "\\" + "testfileconvert"
 				+ ".html");

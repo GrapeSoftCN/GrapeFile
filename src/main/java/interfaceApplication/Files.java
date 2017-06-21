@@ -10,6 +10,7 @@ import org.json.simple.JSONValue;
 import com.mongodb.util.JSON;
 
 import esayhelper.JSONHelper;
+import httpClient.request;
 import model.FileModel;
 import model.fileconvert;
 
@@ -36,11 +37,9 @@ public class Files {
 		if (!object.containsKey("fatherid")) {
 			object.put("fatherid", 0);
 		} else {
-			object.put("fatherid",
-					Integer.parseInt(String.valueOf(object.get("fatherid"))));
+			object.put("fatherid", Integer.parseInt(String.valueOf(object.get("fatherid"))));
 		}
-		return fileModel
-				.resultMessage(JSONHelper.string2json(fileModel.add(object)));
+		return fileModel.resultMessage(JSONHelper.string2json(fileModel.add(object)));
 	}
 
 	// 重命名文件或文件夹,返回重命名后的数据信息
@@ -53,8 +52,7 @@ public class Files {
 		// if (!"0".equals(tip)) {
 		// return fileModel.resultmsg(3, "没有修改权限");
 		// }
-		return fileModel.resultMessage(JSONHelper.string2json(
-				fileModel.update(fid, JSONHelper.string2json(fileInfo))));
+		return fileModel.resultMessage(JSONHelper.string2json(fileModel.update(fid, JSONHelper.string2json(fileInfo))));
 	}
 
 	// 文件存入回收站,fileInfo={\"isdelete\":\"1\"}[支持多个文件操作]
@@ -68,9 +66,7 @@ public class Files {
 		// return fileModel.resultmsg(3, "没有修改权限");
 		// }
 		String fileInfo = "{\"isdelete\":1}";
-		return fileModel.resultmsg(
-				fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)),
-				"存入回收站成功");
+		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "存入回收站成功");
 	}
 
 	// 文件还原,fileInfo={\"isdelete\":\"0\"}
@@ -84,18 +80,14 @@ public class Files {
 		// return fileModel.resultmsg(3, "没有修改权限");
 		// }
 		String fileInfo = "{\"isdelete\":0}";
-		return fileModel.resultmsg(
-				fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)),
-				"从回收站还原文件成功");
+		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "从回收站还原文件成功");
 	}
 
 	// 文件移动至文件夹[包含批量移动]
 	public String FileUpdateBatch(String fids, String folderid) {
 
 		String FileInfo = "{\"fatherid\":\"" + folderid + "\"" + "}";
-		return fileModel.resultmsg(
-				fileModel.updates(fids, JSONHelper.string2json(FileInfo)),
-				"文件移动到文件夹成功");
+		return fileModel.resultmsg(fileModel.updates(fids, JSONHelper.string2json(FileInfo)), "文件移动到文件夹成功");
 	}
 
 	/**
@@ -110,13 +102,11 @@ public class Files {
 	 * @return
 	 */
 	public String PageBy(int idx, int pageSize, String fileInfo) {
-		return fileModel.resultMessage(fileModel.page(idx, pageSize,
-				JSONHelper.string2json(fileInfo)));
+		return fileModel.resultMessage(fileModel.page(idx, pageSize, JSONHelper.string2json(fileInfo)));
 	}
 
 	public String FindFile(String fileInfo) {
-		return fileModel.resultMessage(
-				fileModel.find(JSONHelper.string2json(fileInfo)));
+		return fileModel.resultMessage(fileModel.find(JSONHelper.string2json(fileInfo)));
 	}
 
 	/**
@@ -160,12 +150,26 @@ public class Files {
 
 	public String getWord(String fid) {
 		JSONObject object = fileModel.find(fid);
-		String words = new fileconvert().office2htmlString(
-				object.get("filepath").toString(), "e://test");
-		// String words="putao520";
-		JSONObject object2 = new JSONObject();
-		object2.put("records", words);
-		return fileModel.resultmsg(0, object2.toString());
+		String message = "";
+		try {
+//			String hoString = "http://" + getFileIp("file", 0);
+			String hoString = "http://127.0.0.1:8080";
+//			String filepath = object.get("filepath").toString();
+			String filepath = "\\File\\upload\\2017-06-21\\网格信息20170221.xls";
+			System.out.println(filepath);
+			filepath = filepath.replace("\\", "@t");
+			message = request
+					.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			message = "";
+		}
+		return message;
+
+//		JSONObject object2 = new JSONObject();
+//		object2.put("records", words);
+//		return fileModel.resultmsg(0, object2.toString());
 	}
 
 	// 获取文件对象
@@ -183,13 +187,12 @@ public class Files {
 		}
 		if (object.containsKey("filepath")) {
 			url = object.get("filepath").toString();
-//			url = "http://123.57.214.226:8080" + url;
-			url =  getAppIp("file").split("/")[0]+ url;
+			// url = "http://123.57.214.226:8080" + url;
+			url = getAppIp("file").split("/")[0] + url;
 		}
 		return url;
 	}
-	//视频格式转码
-	
+
 	private String getAppIp(String key) {
 		String value = "";
 		try {
@@ -201,5 +204,16 @@ public class Files {
 		}
 		return value;
 	}
-	
+
+	private String getFileIp(String key, int sign) {
+		String value = "";
+		try {
+			if (sign == 0 || sign == 1) {
+				value = getAppIp(key).split("/")[sign];
+			}
+		} catch (Exception e) {
+			value = "";
+		}
+		return value;
+	}
 }
