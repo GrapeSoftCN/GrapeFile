@@ -5,14 +5,10 @@ import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-
-import com.mongodb.util.JSON;
 
 import esayhelper.JSONHelper;
 import httpClient.request;
 import model.FileModel;
-import model.fileconvert;
 
 @SuppressWarnings("unchecked")
 public class Files {
@@ -25,12 +21,6 @@ public class Files {
 
 	// 新建文件夹
 	public String AddFolder(String fileInfo) {
-		// // 该用户是否拥有新增权限
-		// String tip = execRequest
-		// ._run("GrapeAuth/Auth/InsertPLV/s:" + userid, null).toString();
-		// if (!"0".equals(tip)) {
-		// return fileModel.resultmsg(2, "没有新增权限");
-		// }
 		JSONObject object = JSONHelper.string2json(fileInfo);
 		object.put("filetype", 0); // 文件夹的文件类型设置为0
 		object.put("isdelete", 0);
@@ -44,41 +34,17 @@ public class Files {
 
 	// 重命名文件或文件夹,返回重命名后的数据信息
 	public String FileUpdate(String fid, String fileInfo) {
-		// String uPLV = fileModel.find(fid).get("uplv").toString();
-		// String tip = execRequest
-		// ._run("GrapeAuth/Auth/UpdatePLV/s:" + uPLV + "/s:" + userid,
-		// null)
-		// .toString();
-		// if (!"0".equals(tip)) {
-		// return fileModel.resultmsg(3, "没有修改权限");
-		// }
 		return fileModel.resultMessage(JSONHelper.string2json(fileModel.update(fid, JSONHelper.string2json(fileInfo))));
 	}
 
 	// 文件存入回收站,fileInfo={\"isdelete\":\"1\"}[支持多个文件操作]
 	public String RecyCle(String fid) {
-		// String uPlv = fileModel.find(fid).get("uplv").toString();
-		// String tip = execRequest
-		// ._run("GrapeAuth/Auth/UpdatePLV/s:" + uPlv + "/s:" + userid,
-		// null)
-		// .toString();
-		// if (!"0".equals(tip)) {
-		// return fileModel.resultmsg(3, "没有修改权限");
-		// }
 		String fileInfo = "{\"isdelete\":1}";
 		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "存入回收站成功");
 	}
 
 	// 文件还原,fileInfo={\"isdelete\":\"0\"}
 	public String Restore(String fid) {
-		// String uPlv = fileModel.find(fid).get("uplv").toString();
-		// String tip = execRequest
-		// ._run("GrapeAuth/Auth/UpdatePLV/s:" + uPlv + "/s:" + userid,
-		// null)
-		// .toString();
-		// if (!"0".equals(tip)) {
-		// return fileModel.resultmsg(3, "没有修改权限");
-		// }
 		String fileInfo = "{\"isdelete\":0}";
 		return fileModel.resultmsg(fileModel.RecyBatch(fid, JSONHelper.string2json(fileInfo)), "从回收站还原文件成功");
 	}
@@ -119,16 +85,6 @@ public class Files {
 	 */
 	public String Delete(String FileInfo) {
 		JSONObject object = JSONHelper.string2json(FileInfo);
-		// String dPlv =
-		// fileModel.find(object.get("_id").toString()).get("dplv")
-		// .toString();
-		// String tip = execRequest
-		// ._run("GrapeAuth/Auth/UpdatePLV/s:" + dPlv + "/s:" + userid,
-		// null)
-		// .toString();
-		// if (!"0".equals(tip)) {
-		// return fileModel.resultmsg(4, "没有删除权限");
-		// }
 		return fileModel.resultmsg(fileModel.delete(object), "操作成功");
 	}
 
@@ -144,7 +100,7 @@ public class Files {
 	 * @return
 	 */
 	public String BatchDelete(String FileInfo) {
-		JSONArray array = (JSONArray) JSONValue.parse(FileInfo);
+		JSONArray array = JSONHelper.string2array(FileInfo);
 		return fileModel.resultmsg(fileModel.batch(array), "操作成功");
 	}
 
@@ -152,14 +108,15 @@ public class Files {
 		JSONObject object = fileModel.find(fid);
 		String message = "";
 		try {
-//			String hoString = "http://" + getFileIp("file", 0);
-			String hoString = "http://127.0.0.1:8080";
-//			String filepath = object.get("filepath").toString();
-			String filepath = "\\File\\upload\\2017-06-21\\网格信息20170221.xls";
-			System.out.println(filepath);
+			String hoString = "http://" + getFileIp("file", 0);
+//			String hoString = "http://127.0.0.1:8080";
+			String filepath = object.get("filepath").toString();
+//			String filepath = "\\File\\upload\\2017-06-21\\网格信息20170221.xls";
+//			System.out.println(filepath);
 			filepath = filepath.replace("\\", "@t");
 			message = request
 					.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
+			message = message.replace("gb2312", "utf-8");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -187,7 +144,6 @@ public class Files {
 		}
 		if (object.containsKey("filepath")) {
 			url = object.get("filepath").toString();
-			// url = "http://123.57.214.226:8080" + url;
 			url = getAppIp("file").split("/")[0] + url;
 		}
 		return url;
