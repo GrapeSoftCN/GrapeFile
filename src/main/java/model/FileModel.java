@@ -7,17 +7,14 @@ import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import JGrapeSystem.jGrapeFW_Message;
 import apps.appsProxy;
 import check.formHelper;
 import check.formHelper.formdef;
 import database.DBHelper;
 import database.db;
-//import esayhelper.DBHelper;
-//import esayhelper.formHelper;
-//import esayhelper.formHelper.formdef;
-import esayhelper.JSONHelper;
-import esayhelper.StringHelper;
-import esayhelper.jGrapeFW_Message;
+import json.JSONHelper;
+import string.StringHelper;
 
 public class FileModel {
 	private static DBHelper file;
@@ -76,6 +73,29 @@ public class FileModel {
 		return bind().eq("_id", new ObjectId(fid)).find();
 	}
 
+	@SuppressWarnings("unchecked")
+	public JSONObject GetFile(String fid) {
+		String[] value = fid.split(",");
+		db db = bind().or();
+		for (String tempid : value) {
+			if (tempid.equals("")) {
+				continue;
+			}
+			db.eq("_id", new ObjectId(tempid));
+		}
+		JSONArray array = db.select();
+		JSONObject object;
+		JSONObject objId;
+		JSONObject rObject = new JSONObject();
+		if (array != null && array.size() != 0) {
+			for (Object object2 : array) {
+				object = (JSONObject) object2;
+				objId = (JSONObject) object.get("_id");
+				rObject.put( objId.getString("$oid") , object);
+			}
+		}
+		return rObject;
+	}
 	// 获取某个文件夹下所有文件的大小
 	public int getSize(JSONArray array) {
 		int size = 0;
@@ -106,11 +126,14 @@ public class FileModel {
 			bind().eq(object2.toString(), fileInfo.get(object2.toString()));
 		}
 		JSONArray array = bind().dirty().page(ids, pageSize);
+		long count = bind().dirty().count();
 		JSONObject object = new JSONObject();
 		object.put("totalSize",
 				(int) Math.ceil((double) bind().count() / pageSize));
+		bind().clear();
 		object.put("currentPage", ids);
 		object.put("pageSize", pageSize);
+		object.put("total", count);
 		object.put("data", array);
 		return object;
 	}

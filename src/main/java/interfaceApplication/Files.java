@@ -6,13 +6,14 @@ import java.util.Properties;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import esayhelper.JSONHelper;
 import httpClient.request;
+import json.JSONHelper;
 import model.FileModel;
 
 @SuppressWarnings("unchecked")
 public class Files {
 	private FileModel fileModel = new FileModel();
+	private String thumailPath = "\\File\\upload\\icon\\folder.ico";
 	// private String userid;
 
 	// public Files() {
@@ -24,6 +25,7 @@ public class Files {
 		JSONObject object = JSONHelper.string2json(fileInfo);
 		object.put("filetype", 0); // 文件夹的文件类型设置为0
 		object.put("isdelete", 0);
+		object.put("ThumbnailImage", thumailPath);
 		if (!object.containsKey("fatherid")) {
 			object.put("fatherid", 0);
 		} else {
@@ -109,30 +111,37 @@ public class Files {
 		String message = "";
 		try {
 			String hoString = "http://" + getFileIp("file", 0);
-//			String hoString = "http://127.0.0.1:8080";
 			String filepath = object.get("filepath").toString();
-//			String filepath = "\\File\\upload\\2017-06-21\\网格信息20170221.xls";
-//			System.out.println(filepath);
 			filepath = filepath.replace("\\", "@t");
-			message = request
-					.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
+			message = request.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
 			message = message.replace("gb2312", "utf-8");
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			message = "";
 		}
 		return message;
-
-//		JSONObject object2 = new JSONObject();
-//		object2.put("records", words);
-//		return fileModel.resultmsg(0, object2.toString());
 	}
 
 	// 获取文件对象
 	public String getFile(String fid) {
 		JSONObject object = fileModel.find(fid);
 		return fileModel.resultmsg(0, object != null ? object.toString() : "");
+	}
+
+	/**
+	 * 批量获取文件对象
+	 * @project	GrapeFile
+	 * @package interfaceApplication
+	 * @file Files.java
+	 * 
+	 * @param fid   fid,fid,fid
+	 * @return    {"fid":"fileInfo","fid":"fileInfo"}
+	 *
+	 */
+	public String getFiles(String fid) {
+		JSONObject object = fileModel.GetFile(fid);
+		return object.toString();
 	}
 
 	// 获取文件路径
