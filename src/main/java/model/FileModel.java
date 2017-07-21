@@ -11,27 +11,27 @@ import JGrapeSystem.jGrapeFW_Message;
 import apps.appsProxy;
 import check.formHelper;
 import check.formHelper.formdef;
-import database.DBHelper;
 import database.db;
+import database.userDBHelper;
 import json.JSONHelper;
+import nlogger.nlogger;
+import rpc.execRequest;
 import string.StringHelper;
 
 public class FileModel {
-	private static DBHelper file;
-	private static formHelper form;
+//	private DBHelper file;
+	private userDBHelper file;
+	private formHelper form;
 	private JSONObject _obj = new JSONObject();
 
-	static {
-		file = new DBHelper(appsProxy.configValue().get("db").toString(),
-				"file", "_id");
-		form = file.getChecker();
-	}
-
 	private db bind() {
+		nlogger.logout(appsProxy.appid());
 		return file.bind(String.valueOf(appsProxy.appid()));
 	}
 
 	public FileModel() {
+		file = new userDBHelper("file", (String) execRequest.getChannelValue("sid"));
+		form = file.getChecker();
 		form.putRule("fileoldname", formdef.notNull);
 	}
 

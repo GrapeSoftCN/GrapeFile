@@ -12,14 +12,11 @@ import model.FileModel;
 
 @SuppressWarnings("unchecked")
 public class Files {
-	private FileModel fileModel = new FileModel();
+	private FileModel fileModel;
 	private String thumailPath = "\\File\\upload\\icon\\folder.ico";
-	// private String userid;
-
-	// public Files() {
-	// userid = execRequest.getChannelValue("Userid").toString();
-	// }
-
+	public Files() {
+		fileModel = new FileModel();
+	}
 	// 新建文件夹
 	public String AddFolder(String fileInfo) {
 		JSONObject object = JSONHelper.string2json(fileInfo);
@@ -108,17 +105,19 @@ public class Files {
 
 	public String getWord(String fid) {
 		JSONObject object = fileModel.find(fid);
-		String message = "";
-		try {
-			String hoString = "http://" + getFileIp("file", 0);
-			String filepath = object.get("filepath").toString();
-			filepath = filepath.replace("\\", "@t");
-			message = request.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
-			message = message.replace("gb2312", "utf-8");
+		String message = "123";
+		if (object!=null) {
+			try {
+				String hoString = "http://" + getFileIp("file", 0);
+				String filepath = object.get("filepath").toString();
+				filepath = filepath.replace("\\", "@t");
+				message = request.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
+				message = message.replace("gb2312", "utf-8");
 
-		} catch (Exception e) {
-			e.printStackTrace();
-			message = "";
+			} catch (Exception e) {
+				e.printStackTrace();
+				message = "";
+			}
 		}
 		return message;
 	}
