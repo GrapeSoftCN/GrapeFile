@@ -17,6 +17,7 @@ public class Files {
 	public Files() {
 		fileModel = new FileModel();
 	}
+	
 	// 新建文件夹
 	public String AddFolder(String fileInfo) {
 		JSONObject object = JSONHelper.string2json(fileInfo);

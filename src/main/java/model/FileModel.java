@@ -25,7 +25,6 @@ public class FileModel {
 	private JSONObject _obj = new JSONObject();
 
 	private db bind() {
-		nlogger.logout(appsProxy.appid());
 		return file.bind(String.valueOf(appsProxy.appid()));
 	}
 
@@ -119,17 +118,22 @@ public class FileModel {
 
 	@SuppressWarnings("unchecked")
 	public JSONObject page(int ids, int pageSize, JSONObject fileInfo) {
+		String key;
+		Object value;
+		db db = bind();
 		if (!fileInfo.containsKey("isdelete")) {
-			bind().eq("isdelete", 0);
+			db.eq("isdelete", 0);
 		}
 		for (Object object2 : fileInfo.keySet()) {
-			bind().eq(object2.toString(), fileInfo.get(object2.toString()));
+			key = object2.toString();
+			value = fileInfo.get(key);
+			db.eq(key, value);
 		}
-		JSONArray array = bind().dirty().page(ids, pageSize);
-		long count = bind().dirty().count();
+		JSONArray array = db.dirty().desc("time").page(ids, pageSize);
+		long count = db.count();
 		JSONObject object = new JSONObject();
 		object.put("totalSize",
-				(int) Math.ceil((double) bind().count() / pageSize));
+				(int) Math.ceil((double) count / pageSize));
 		bind().clear();
 		object.put("currentPage", ids);
 		object.put("pageSize", pageSize);
