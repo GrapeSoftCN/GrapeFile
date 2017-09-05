@@ -1,7 +1,9 @@
 package model;
 
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
@@ -9,6 +11,7 @@ import org.json.simple.JSONObject;
 
 import JGrapeSystem.jGrapeFW_Message;
 import apps.appsProxy;
+import authority.privilige;
 import check.formHelper;
 import check.formHelper.formdef;
 import database.db;
@@ -16,22 +19,38 @@ import database.userDBHelper;
 import json.JSONHelper;
 import nlogger.nlogger;
 import rpc.execRequest;
+import session.session;
 import string.StringHelper;
 
 public class FileModel {
-//	private DBHelper file;
 	private userDBHelper file;
 	private formHelper form;
 	private JSONObject _obj = new JSONObject();
+	private String sid = null;
+	private JSONObject UserInfo = null;
+	private session session;
+	private String currentWeb = null;
+
+	public FileModel() {
+		session = new session();
+		sid = (String) execRequest.getChannelValue("sid");
+		if (sid != null) {
+			UserInfo = session.getSession(sid);
+		}
+		if (UserInfo != null && UserInfo.size() != 0) {
+			currentWeb = UserInfo.getString("currentWeb");
+		}
+		file = new userDBHelper("file", (String) execRequest.getChannelValue("sid"));
+		form = file.getChecker();
+		form.putRule("fileoldname", formdef.notNull);
+	}
 
 	private db bind() {
 		return file.bind(String.valueOf(appsProxy.appid()));
 	}
 
-	public FileModel() {
-		file = new userDBHelper("file", (String) execRequest.getChannelValue("sid"));
-		form = file.getChecker();
-		form.putRule("fileoldname", formdef.notNull);
+	public db getDB() {
+		return bind();
 	}
 
 	// 新增文件夹
@@ -45,8 +64,7 @@ public class FileModel {
 
 	// 修改文件信息
 	public String update(String fid, JSONObject FileInfo) {
-		int code = bind().eq("_id", new ObjectId(fid)).data(FileInfo)
-				.update() != null ? 0 : 99;
+		int code = bind().eq("_id", new ObjectId(fid)).data(FileInfo).update() != null ? 0 : 99;
 		if (code != 0) {
 			return resultmsg(code, "操作失败");
 		}
@@ -55,14 +73,10 @@ public class FileModel {
 
 	// 整合单个文件修改及批量修改
 	public int updates(String fids, JSONObject FileInfo) {
-		if (fids.contains(",")) {
-			bind().or();
-			String[] value = fids.split(",");
-			for (int i = 0, len = value.length; i < len; i++) {
-				bind().eq("_id", new ObjectId(value[i]));
-			}
-		} else {
-			bind().eq("_id", new ObjectId(fids));
+		bind().or();
+		String[] value = fids.split(",");
+		for (int i = 0, len = value.length; i < len; i++) {
+			bind().eq("_id", new ObjectId(value[i]));
 		}
 		return bind().data(FileInfo).updateAll() != 0 ? 0 : 99;
 	}
@@ -77,10 +91,9 @@ public class FileModel {
 		String[] value = fid.split(",");
 		db db = bind().or();
 		for (String tempid : value) {
-			if (tempid.equals("")) {
-				continue;
+			if (!tempid.equals("")) {
+				db.eq("_id", new ObjectId(tempid));
 			}
-			db.eq("_id", new ObjectId(tempid));
 		}
 		JSONArray array = db.select();
 		JSONObject object;
@@ -90,11 +103,12 @@ public class FileModel {
 			for (Object object2 : array) {
 				object = (JSONObject) object2;
 				objId = (JSONObject) object.get("_id");
-				rObject.put( objId.getString("$oid") , object);
+				rObject.put(objId.getString("$oid"), object);
 			}
 		}
 		return rObject;
 	}
+
 	// 获取某个文件夹下所有文件的大小
 	public int getSize(JSONArray array) {
 		int size = 0;
@@ -107,33 +121,55 @@ public class FileModel {
 
 	// json条件查询文件或文件夹信息
 	public JSONArray find(JSONObject fileInfo) {
-		if (fileInfo.containsKey("isdelete")) {
-			bind().eq("isdelete", 0);
-		}
-		for (Object object2 : fileInfo.keySet()) {
-			bind().like(object2.toString(), fileInfo.get(object2.toString()));
-		}
-		return bind().limit(20).select();
-	}
-
-	@SuppressWarnings("unchecked")
-	public JSONObject page(int ids, int pageSize, JSONObject fileInfo) {
-		String key;
-		Object value;
 		db db = bind();
+		String key, value;
+		long values;
 		if (!fileInfo.containsKey("isdelete")) {
 			db.eq("isdelete", 0);
 		}
 		for (Object object2 : fileInfo.keySet()) {
 			key = object2.toString();
-			value = fileInfo.get(key);
-			db.eq(key, value);
+			value = fileInfo.getString(key);
+			try {
+				if (!key.equals("fatherid")) {
+					values = Long.parseLong(value);
+					db.eq(key, values);
+				} else {
+					db.eq(key, value);
+				}
+			} catch (Exception e) {
+				nlogger.logout(e);
+			}
 		}
+		return db.limit(20).select();
+	}
+
+	@SuppressWarnings("unchecked")
+	public JSONObject page(int ids, int pageSize, JSONObject fileInfo) {
+		String key;
+		int role = getRoleSign();
+		db db = bind();
+		if (fileInfo != null && fileInfo.size() != 0) {
+			if (!fileInfo.containsKey("isdelete")) {
+				db.eq("isdelete", 0);
+			}
+			for (Object object2 : fileInfo.keySet()) {
+				key = object2.toString();
+				if (key.equals("isdelete") || key.equals("filetype")) {
+					db.eq(key, fileInfo.get(key));
+				} else {
+					db.eq(key, fileInfo.getString(key));
+				}
+			}
+			if (role == 3 || role == 2) {
+				db.eq("wbid", currentWeb);
+			}
+		}
+		System.out.println(db.condString());
 		JSONArray array = db.dirty().desc("time").page(ids, pageSize);
 		long count = db.count();
 		JSONObject object = new JSONObject();
-		object.put("totalSize",
-				(int) Math.ceil((double) count / pageSize));
+		object.put("totalSize", (int) Math.ceil((double) count / pageSize));
 		bind().clear();
 		object.put("currentPage", ids);
 		object.put("pageSize", pageSize);
@@ -242,14 +278,14 @@ public class FileModel {
 			code = ckDelete(object.get("_id").toString());
 		} else {
 			String infos = "{\"isdelete\":1}";
-			code = RecyBatch(object.get("_id").toString(),
-					JSONHelper.string2json(infos));
+			code = RecyBatch(object.get("_id").toString(), JSONHelper.string2json(infos));
 		}
 		return code;
 	}
 
 	public int batch(JSONArray array) {
 		int code = 0;
+		Object temp;
 		boolean flag = false;
 		List<String> list = new ArrayList<>();
 		List<String> lists = new ArrayList<>();
@@ -260,10 +296,11 @@ public class FileModel {
 				flag = true;
 				list.add(object.get("_id").toString());
 			} else {
-				if (object.get("size").toString() == null) {
+				temp = object.get("size");
+				if (temp == null) {
 					lists.add(object.get("_id").toString());
 				} else {
-					if ((long) object.get("size") > FIXSIZE) {
+					if ((long) temp > FIXSIZE) {
 						flag = true;
 						list.add(object.get("_id").toString());
 					} else {
@@ -277,8 +314,7 @@ public class FileModel {
 		}
 		if (lists.size() != 0) {
 			String infos = "{\"isdelete\":1}";
-			code = RecyBatch(StringHelper.join(lists),
-					JSONHelper.string2json(infos));
+			code = RecyBatch(StringHelper.join(lists), JSONHelper.string2json(infos));
 		}
 		return code;
 	}
@@ -294,6 +330,71 @@ public class FileModel {
 			bind().eq("fatherid", fid);
 		}
 		bind().deleteAll();
+	}
+
+	/**
+	 * 根据角色plv，获取角色级别
+	 * 
+	 * @project GrapeSuggest
+	 * @package interfaceApplication
+	 * @file Suggest.java
+	 * 
+	 * @return
+	 *
+	 */
+	private int getRoleSign() {
+		int roleSign = 0; // 游客
+		if (sid != null) {
+			try {
+				privilige privil = new privilige(sid);
+				int roleplv = privil.getRolePV(appsProxy.appidString());
+				if (roleplv >= 1000 && roleplv < 3000) {
+					roleSign = 1; // 普通用户即企业员工
+				}
+				if (roleplv >= 3000 && roleplv < 5000) {
+					roleSign = 2; // 栏目管理员
+				}
+				if (roleplv >= 5000 && roleplv < 8000) {
+					roleSign = 3; // 企业管理员
+				}
+				if (roleplv >= 8000 && roleplv < 10000) {
+					roleSign = 4; // 监督管理员
+				}
+				if (roleplv >= 10000) {
+					roleSign = 5; // 总管理员
+				}
+			} catch (Exception e) {
+				nlogger.logout(e);
+				roleSign = 0;
+			}
+		}
+		return roleSign;
+	}
+
+	public String getPath(String key) {
+		String value = "";
+		try {
+			value = getAppIp(key);
+		} catch (Exception e) {
+			value = "";
+		}
+		return value;
+	}
+
+	public String getAppIp(String key) {
+		String value = "";
+		try {
+			Properties pro = new Properties();
+			pro.load(new FileInputStream("URLConfig.properties"));
+			value = pro.getProperty(key);
+		} catch (Exception e) {
+			value = "";
+		}
+		return value;
+	}
+
+	public String resultMessage(int num) {
+		return resultmsg(num, "");
 	}
 
 	@SuppressWarnings("unchecked")
