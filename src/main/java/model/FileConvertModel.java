@@ -1,36 +1,41 @@
 package model;
 
-import java.io.IOException;
+import org.jodconverter.OfficeDocumentConverter;
+import org.jodconverter.office.DefaultOfficeManagerBuilder;
+import org.jodconverter.office.OfficeException;
+import org.jodconverter.office.OfficeManager;
 
-import com.artofsolving.jodconverter.openoffice.connection.OpenOfficeConnection;
-import com.artofsolving.jodconverter.openoffice.connection.SocketOpenOfficeConnection;
+import nlogger.nlogger;
+
 
 public class FileConvertModel {
-	private Process process = null;
-	private OpenOfficeConnection connection = null;
+	private static GetFileUrl fileUrl = new GetFileUrl();
+	private static OfficeManager om;
 
-	/**
-	 * 启动openoffice并连接到openoffice
-	 * 
-	 * @return
-	 */
-	public OpenOfficeConnection execOpenOffice() {
-		String command = "E:\\OpenOffice\\OpenOffice4\\program\\soffice.exe -headless -accept=\"socket,host=192.168.3.141,port=8100;urp;\"";
+	static{
+		String ip = fileUrl.getOpenOffice(0);
+		String port = fileUrl.getOpenOffice(1);
+		DefaultOfficeManagerBuilder omConfig = new DefaultOfficeManagerBuilder();
+		omConfig.setOfficeHome(fileUrl.getOpenOfficeUrl());
+		omConfig.setPortNumber( (new Integer(port)).intValue() );
+		omConfig.setTaskExecutionTimeout(1000 * 60 * 10L);//
+		// 设置任务执行超时为5分钟
+		omConfig.setTaskQueueTimeout(1000 * 60 * 60 * 24L);//
+		// 设置任务队列超时为24小时
+		om = omConfig.build();
 		try {
-			process = Runtime.getRuntime().exec(command);
-			connection = new SocketOpenOfficeConnection("192.168.3.141", 8100);
-			connection.connect();
-		} catch (IOException e) {
+			om.start();
+		} catch (OfficeException e) {
+			nlogger.logout(e);
 			e.printStackTrace();
+			try {
+				om.stop();
+			} catch (OfficeException e1) {
+				;
+			}
 		}
-		return connection;
 	}
-
-	/**
-	 * 关闭连接
-	 */
-	public void close(OpenOfficeConnection connection) {
-		connection.disconnect();
-		process.destroy();
+	public OfficeDocumentConverter getConverter(){
+		return new OfficeDocumentConverter(om);
 	}
 }

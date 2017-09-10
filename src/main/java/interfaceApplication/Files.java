@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.util.Properties;
 import json.JSONHelper;
 import model.FileModel;
+import model.fileconvert;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -70,6 +72,7 @@ public class Files {
 	}
 
 	public String getWord(String fid) {
+		// fileconvert fileconvert = new fileconvert();
 		JSONObject object = this.fileModel.find(fid);
 		String message = "";
 		if (object != null) {
@@ -77,7 +80,8 @@ public class Files {
 				String hoString = "http://" + getFileIp("file", 0);
 				String filepath = object.get("filepath").toString();
 				filepath = filepath.replace("\\", "@t");
-				message = request.Get(hoString + "/File/FileConvert?sourceFile=" + filepath + "&type=2");
+				// message = fileconvert.Convert(fid, 2);
+				message = request.Get(hoString + "/FileServer/FileConvert?sourceFile=" + filepath + "&type=2");
 				message = message.replace("gb2312", "utf-8");
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -85,6 +89,19 @@ public class Files {
 			}
 		} else {
 			message = jGrapeFW_Message.netMSG(5, "该文档不存在");
+		}
+		return message;
+	}
+
+	public String TestConvert(String name) {
+		fileconvert fileconvert = new fileconvert();
+		String message = "";
+		try {
+			message = fileconvert.Convert(name, 2);
+			message = message.replace("gb2312", "utf-8");
+		} catch (Exception e) {
+			e.printStackTrace();
+			message = "";
 		}
 		return message;
 	}

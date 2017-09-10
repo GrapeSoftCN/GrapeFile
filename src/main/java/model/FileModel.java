@@ -40,7 +40,7 @@ public class FileModel {
 		if (UserInfo != null && UserInfo.size() != 0) {
 			currentWeb = UserInfo.getString("currentWeb");
 		}
-		file = new userDBHelper("file", (String) execRequest.getChannelValue("sid"));
+		file = new userDBHelper("file", sid);
 		form = file.getChecker();
 		form.putRule("fileoldname", formdef.notNull);
 	}
